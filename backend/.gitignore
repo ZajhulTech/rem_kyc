@@ -1,0 +1,70 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+
+# Pylint
+.pylint.d/
+
+# Coverage reports
+htmlcov/
+coverage.xml
+.coverage
+*.cover
+*.py,cover
+
+# Logs
+*.log
+
+# Unit test / coverage
+.tox/
+nosetests.xml
+test-results/
+
+# Local .env files
+.env
+.env.*
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+
+# FastAPI
+instance/
+*.db
+
+# PyCharm
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Others
+*.sqlite3
