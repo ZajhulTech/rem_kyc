@@ -11,12 +11,12 @@ Este proyecto implementa una arquitectura limpia utilizando **FastAPI** y **Mong
 El proyecto sigue los principios de **Clean Architecture**, dividiendo la lógica en capas bien definidas:
 
 ```
-app/
+backend/
 ├── infra/                  # Infraestructura (API, MongoDB, respuestas)
 ├── interfaces/             # Contratos y puentes entre capas (repositories, unit of work, user stories)
 ├── models/                 # Modelos de datos (AtlasDB, request, response)
 ├── userstorys/             # Casos de uso / lógica de negocio
-├── webapi/                 # Entrada principal de la app (Fast API)
+├── webapi/                 # API Interface (Fast API)
 ```
 
 ---
@@ -91,6 +91,7 @@ pytest
 
 - `app/infra/api/` - Controladores de API y respuestas HTTP
 - `app/infra/mongodb/` - Repositorios e implementación con MongoDB
+- `app/infra/postgresql/` - Repositorios e implementación con Postgresql
 - `app/interfaces/` - Interfaces base para UnitOfWork y Repositorios
 - `app/models/` - Modelos de entidades, DTOs para request y response
 - `app/userstorys/` - Casos de uso / lógica de negocio (Application Layer)

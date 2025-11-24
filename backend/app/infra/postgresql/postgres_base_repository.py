@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import DeclarativeMeta
 
 T = TypeVar("T")
@@ -55,32 +55,52 @@ class PostgresBaseRepository(Generic[T]):
         return result.scalar()
 
     async def find_filter_paginated(
-    self,
-    filter: Dict[str, Any],
-    page: int = 1,
-    page_size: int = 10,
-    sort: Optional[List[Any]] = None
+        self,
+        filter: Dict[str, Any],
+        page: int = 1,
+        page_size: int = 10,
+        sort: Optional[List[Any]] = None
     ) -> Dict[str, Any]:
         """
         Función genérica para paginar cualquier modelo (tabla o vista),
         usando filter dict y sort opcional.
         
         Args:
-            filter: Diccionario con filtros {campo: valor}
+            filter: Diccionario con filtros
+                - Si hay múltiples campos con el mismo valor: búsqueda OR
+                - Campos individuales: búsqueda exacta
             page: Número de página
             page_size: Tamaño de página
-            sort: Lista de campos para ordenar. Puede ser:
-                - String: "campo" (ascendente) o "-campo" (descendente)
-                - Columna SQLAlchemy: model.campo.desc() o model.campo.asc()
+            sort: Lista de campos para ordenar
         """
 
         offset = (page - 1) * page_size
 
         query = select(self.model)
+        count_query = select(func.count()).select_from(self.model)
 
         # Aplicar filtros
-        for key, value in filter.items():
-            query = query.where(getattr(self.model, key) == value)
+        if filter:
+            # Verificar si hay múltiples filtros con el mismo valor (búsqueda OR)
+            filter_values = list(filter.values())
+            if len(filter) > 1 and len(set(filter_values)) == 1:
+                # Múltiples campos con el mismo valor → búsqueda OR
+                search_value = f"%{filter_values[0]}%"
+                conditions = []
+                
+                for key in filter.keys():
+                    field = getattr(self.model, key)
+                    conditions.append(field.ilike(search_value))
+                
+                # Aplicar condición OR
+                query = query.where(or_(*conditions))
+                count_query = count_query.where(or_(*conditions))
+            else:
+                # Filtros individuales → búsqueda exacta
+                for key, value in filter.items():
+                    field = getattr(self.model, key)
+                    query = query.where(field == value)
+                    count_query = count_query.where(field == value)
 
         # Sorting mejorado
         if sort:
@@ -107,11 +127,7 @@ class PostgresBaseRepository(Generic[T]):
         items = result.scalars().all()
 
         # Contar total de items
-        total_query = select(func.count()).select_from(self.model)
-        for key, value in filter.items():
-            total_query = total_query.where(getattr(self.model, key) == value)
-
-        total_result = await self.session.execute(total_query)
+        total_result = await self.session.execute(count_query)
         total = total_result.scalar()
 
         return {

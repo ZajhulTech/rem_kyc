@@ -7,7 +7,7 @@ from app.infra.api.response import Response
 from app.interfaces.database.unit_of_work import IUnitOfWork
 from app.interfaces.userstorys.verification_story import IVerificationStory
 from app.models.response.verification_response import VerificationResponseDTO, VerificationDetailResponseDTO
-from app.models.request.verification_request import VerificationCreateRequestDTO
+from app.models.request.verification_request import VerificationCreateRequestDTO, VerificationStatusUpdateRequestDTO
 from app.models.data_base.onbaording_models import VerificationStatusModel,DocumentTypeModel,RiskLevelCatalogModel,CountryCatalogModel,VerificationRequestModel,VerificationRequestViewModel
 from app.infra.postgresql.postgres_base_repository import PostgresBaseRepository
 
@@ -20,16 +20,24 @@ class VerificationStory(IVerificationStory):
         self,
         page: int = 1,
         page_size: int = 10,
-        status: Optional[str] = None,
+        filter: Optional[str] = None,
         sort: Optional[list] = None
     ) -> Response:
         """
-        Obtiene el detalle de las verificaciones.
+        Obtiene el listado paginado de verificaciones con filtro unificado.
+        
+        Args:
+            page: Número de página
+            page_size: Tamaño de página
+            filter: Texto para buscar en estado o nombre (búsqueda parcial)
+            sort: Campos para ordenar
         """
 
         filter_data = {}
-        if status:
-            filter_data["status"] = status
+       
+        if filter:
+            filter_data["status"] = filter
+            filter_data["full_name"] = filter
 
         async with self._uow as uow:
             repo: PostgresBaseRepository[VerificationRequestViewModel] = uow.get_repository(VerificationRequestViewModel)
@@ -168,6 +176,86 @@ class VerificationStory(IVerificationStory):
             message="Solicitud de verificación creada exitosamente. El análisis de riesgo se procesará en segundo plano."
         )
 
+
+    async def update_verification_status(
+            self,
+            status_update_data: VerificationStatusUpdateRequestDTO
+        ) -> Response:
+        """
+        Actualiza el estado de una solicitud de verificación.
+        """
+        verification_id = str(status_update_data.verification_id)
+        new_status_code = status_update_data.status_code
+        
+        async with self._uow as uow:
+
+            # 1. Buscar la verificación existente en la VISTA (ya incluye el estado)
+            view_repo = uow.get_repository(VerificationRequestViewModel)
+            existing_verification_view = await view_repo.find_by_id(verification_id)
+            
+            if not existing_verification_view:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No se encontró la verificación con ID {verification_id}"
+                )
+
+            # 2. Buscar el nuevo estado por código
+            status_repo = uow.get_repository(VerificationStatusModel)
+            new_status = await status_repo.find_one_by({"code": new_status_code})
+            
+            if not new_status:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Estado '{new_status_code}' no válido"
+                )
+
+            # 3. Obtener el estado actual desde la VISTA - CORREGIDO
+            current_status_code = existing_verification_view.status.lower()  # Convertir a minúsculas para comparar
+
+            # 3. Validar transición de estado
+            valid_transitions = {
+                "pending": ["approved", "rejected", "requires_information"],
+                "requires_information": ["pending", "approved", "rejected"],
+                "approved": ["rejected"],
+                "rejected": ["pending"]
+            }
+            
+            if (current_status_code in valid_transitions and 
+                new_status_code not in valid_transitions[current_status_code]):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No se puede cambiar el estado de '{current_status_code}' a '{new_status_code}'"
+                )
+
+            # 4. Actualizar el estado y timestamp
+            current_time = datetime.utcnow()
+            
+            update_data = {
+                "status_id": new_status.id,
+                "updated_at": current_time
+            }
+
+            # 5. Ejecutar la actualización en el modelo principal
+            verification_repo = uow.get_repository(VerificationRequestModel)
+            await verification_repo.update(verification_id, update_data)
+            await uow.commit()
+
+            # 6. Obtener la entidad actualizada para la respuesta
+            updated_entity = await view_repo.find_by_id(verification_id)
+            
+            if not updated_entity:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Error al recuperar la verificación actualizada"
+                )
+
+            # 7. Convertir a DTO de respuesta
+            response_data = self.to_verification_response(updated_entity)
+
+        return Response.with_data(
+            data=response_data,
+            message=f"Estado de la verificación actualizado exitosamente a '{new_status_code}'"
+        )
 
     # -------------------------------------------------------------------
     # Mapping ORM → DTO

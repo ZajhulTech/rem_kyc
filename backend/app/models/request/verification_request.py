@@ -28,3 +28,8 @@ class VerificationCreateRequestDTO(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class VerificationStatusUpdateRequestDTO(BaseModel):
+    verification_id: UUID
+    status_code: str  # "approved", "rejected", "requires_information", etc.

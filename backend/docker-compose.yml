@@ -5,10 +5,11 @@ services:
     build: .
     container_name: fastapi-clean-api
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - .:/app
     environment:
       - MONGO_URI=${MONGO_URI}
+      - POSTGRES_URI=${POSTGRES_URI}
     env_file:
       - .env
