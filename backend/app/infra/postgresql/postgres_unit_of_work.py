@@ -34,3 +34,11 @@ class PostgresUnitOfWork(IUnitOfWork, Generic[T]):
             )
 
         return self._repositories[key]
+
+    async def commit(self):
+        """Confirmar la transacción"""
+        await self.session.commit()
+
+    async def rollback(self):
+        """Revertir la transacción"""
+        await self.session.rollback()

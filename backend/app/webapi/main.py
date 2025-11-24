@@ -1,6 +1,6 @@
 from app.webapi.dependencies.postgres_dependencies import log_connection_info
 from fastapi import FastAPI
-from app.infra.api.exception_handlers import http_exception_handler, unhandled_exception_handler
+from app.infra.api.exception_handlers import add_exception_handlers
 from fastapi.exceptions import HTTPException
 from app.webapi.routers import user_router, customer_router, verification_router
 
@@ -15,8 +15,7 @@ async def startup_event():
     await log_connection_info()
 
 # Registrar handlers globales
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(Exception, unhandled_exception_handler)
+add_exception_handlers(app)
 
 app.include_router(user_router.router)
 app.include_router(customer_router.router)

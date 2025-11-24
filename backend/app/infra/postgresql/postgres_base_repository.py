@@ -15,7 +15,7 @@ class PostgresBaseRepository(Generic[T]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def find(self, filter: Dict[str, Any]) -> Optional[T]:
+    async def find_one_by(self, filter: Dict[str, Any]) -> Optional[T]:
         query = select(self.model).filter_by(**filter)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -25,7 +25,8 @@ class PostgresBaseRepository(Generic[T]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def insert(self, data: T) -> Any:
+
+    async def create(self, data: T) -> Any:
         self.session.add(data)
         await self.session.commit()
         await self.session.refresh(data)
@@ -53,31 +54,63 @@ class PostgresBaseRepository(Generic[T]):
         result = await self.session.execute(query)
         return result.scalar()
 
-    async def paginate(
-        self,
-        filter: Dict[str, Any],
-        page: int = 1,
-        page_size: int = 10,
-        sort: Optional[List[Any]] = None
+    async def find_filter_paginated(
+    self,
+    filter: Dict[str, Any],
+    page: int = 1,
+    page_size: int = 10,
+    sort: Optional[List[Any]] = None
     ) -> Dict[str, Any]:
+        """
+        Función genérica para paginar cualquier modelo (tabla o vista),
+        usando filter dict y sort opcional.
+        
+        Args:
+            filter: Diccionario con filtros {campo: valor}
+            page: Número de página
+            page_size: Tamaño de página
+            sort: Lista de campos para ordenar. Puede ser:
+                - String: "campo" (ascendente) o "-campo" (descendente)
+                - Columna SQLAlchemy: model.campo.desc() o model.campo.asc()
+        """
 
         offset = (page - 1) * page_size
 
-        # Base query
-        query = select(self.model).filter_by(**filter)
+        query = select(self.model)
 
-        # Sorting
+        # Aplicar filtros
+        for key, value in filter.items():
+            query = query.where(getattr(self.model, key) == value)
+
+        # Sorting mejorado
         if sort:
-            query = query.order_by(*sort)
+            order_by_clauses = []
+            for sort_item in sort:
+                if isinstance(sort_item, str):
+                    # Si es string, verificar si es descendente
+                    if sort_item.startswith('-'):
+                        field_name = sort_item[1:]  # Remover el '-'
+                        field = getattr(self.model, field_name)
+                        order_by_clauses.append(field.desc())
+                    else:
+                        # Orden ascendente por defecto
+                        field = getattr(self.model, sort_item)
+                        order_by_clauses.append(field.asc())
+                else:
+                    # Si ya es una expresión SQLAlchemy (asc(), desc())
+                    order_by_clauses.append(sort_item)
+            
+            query = query.order_by(*order_by_clauses)
 
-        # Execute paged query
-        result = await self.session.execute(
-            query.offset(offset).limit(page_size)
-        )
+        # Ejecutar query paginada
+        result = await self.session.execute(query.offset(offset).limit(page_size))
         items = result.scalars().all()
 
-        # Count total items
-        total_query = select(func.count()).select_from(self.model).filter_by(**filter)
+        # Contar total de items
+        total_query = select(func.count()).select_from(self.model)
+        for key, value in filter.items():
+            total_query = total_query.where(getattr(self.model, key) == value)
+
         total_result = await self.session.execute(total_query)
         total = total_result.scalar()
 

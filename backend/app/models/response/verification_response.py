@@ -6,10 +6,22 @@ class VerificationResponseDTO(BaseModel):
     id: str
     full_name: str
     email: EmailStr
-    phone: str
     country: str
-    document_type: str
-    document_number: str
+    status: str
+    created_at: datetime
+   
+    class Config:
+        from_attributes = True
+
+
+class VerificationDetailResponseDTO(BaseModel):
+    id: str
+    full_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    country: str
+    document_type: Optional[str] = None
+    document_number: Optional[str] = None
 
     document_image_url: Optional[str] = None
     selfie_image_url: Optional[str] = None
@@ -19,7 +31,7 @@ class VerificationResponseDTO(BaseModel):
     risk_level: Optional[str] = None
 
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None 
 
     class Config:
         from_attributes = True
