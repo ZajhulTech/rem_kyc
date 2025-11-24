@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: webapi/Dockerfile
+    container_name: fastapi-clean-api
+    ports:
+      - "8001:8000"
+
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - POSTGRES_URI=${POSTGRES_URI}
+    env_file:
+      - .env
