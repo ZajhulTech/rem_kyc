@@ -10,7 +10,8 @@
               <h2 class="text-2xl font-bold text-rem-primary">Detalle de Verificación</h2>
               <BaseButton 
                 variant="secondary" 
-                @click="$router.back()"
+                @click="$router.push(`/dashboard`)"
+
                 class="flex items-center gap-2"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -67,3 +67,14 @@ export interface DocumentTypeResponseDTO {
   code: string;
   description: string;
 }
+
+export interface VerificationStatusResponseDTO {
+  id: string;
+  code: string;
+  description: string;
+}
+
+export interface UpdateVerificationStatusDTO {
+  verification_id: string;
+  status_code: string;
+}

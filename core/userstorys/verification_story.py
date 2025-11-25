@@ -37,7 +37,8 @@ class VerificationStory(IVerificationStory):
        
         if filter:
             filter_data["status"] = filter
-            filter_data["full_name"] = filter
+            filter_data["status"] = filter
+            filter_data["status_desc"] = filter
 
         async with self._uow as uow:
             repo: PostgresBaseRepository[VerificationRequestViewModel] = uow.get_repository(VerificationRequestViewModel)

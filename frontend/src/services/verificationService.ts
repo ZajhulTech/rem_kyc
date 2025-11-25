@@ -1,11 +1,12 @@
 import api from "./api";
-import type { ApiResponse, PaginatedResult, VerificationResponseDTO, VerificationDetailResponseDTO, VerificationRequestDTO } from "./types";
+import type { ApiResponse, PaginatedResult, VerificationResponseDTO, VerificationDetailResponseDTO, VerificationRequestDTO, UpdateVerificationStatusDTO } from "./types";
 
 
-export async function getVerifications(page = 1, pageSize = 10) {
-  const response = await api.get<ApiResponse<PaginatedResult<VerificationResponseDTO>>>(
-    `/verification?page=${page}&page_size=${pageSize}`
-  );
+export async function getVerifications(page = 1, pageSize = 10, filter = "") {
+  
+   const baseURL = `/verification?page=${page}&page_size=${pageSize}` + (filter != "" ? `&filter=${filter}` : "");
+  
+   const response = await api.get<ApiResponse<PaginatedResult<VerificationResponseDTO>>>( baseURL);
 
    return {
     items: response.data.data.items,
@@ -17,7 +18,6 @@ export async function getVerifications(page = 1, pageSize = 10) {
   
 }
 
-// Ejemplo de obtener un solo registro
 export async function getVerificationById(id: string) {
   const response = await api.get<ApiResponse<VerificationDetailResponseDTO>>(`/verification/detail?id=${id}`);
   return response.data;
@@ -32,5 +32,9 @@ export async function createVerification(payload: VerificationRequestDTO) {
   return response.data;
 }
 
+export async function updateVerificationStatus(payload: UpdateVerificationStatusDTO) {
+  const response = await api.put("/verification/status", payload);
+  return response.data;
+}
 
 

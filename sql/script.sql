@@ -56,9 +56,8 @@ CREATE INDEX idx_verification_document_type_id ON public.verification_requests(d
 CREATE INDEX idx_verification_risk_level_id ON public.verification_requests(risk_level_id);
 CREATE INDEX idx_verification_country_id ON public.verification_requests(country_id);
 
-CREATE OR REPLACE VIEW public.vw_verification_requests AS
-SELECT
-    vr.id,
+CREATE OR REPLACE VIEW public.vw_verification_requests 
+as SELECT vr.id,
     vr.full_name,
     vr.email,
     vr.phone,
@@ -69,15 +68,16 @@ SELECT
     vr.document_image_url,
     vr.selfie_image_url,
     vs.code AS status,
+    vs.description as status_desc, 
     vr.risk_score,
     rl.code AS risk_level,
     vr.created_at,
     vr.updated_at
-FROM public.verification_requests vr
-JOIN public.document_type dt ON vr.document_type_id = dt.id
-JOIN public.verification_status vs ON vr.status_id = vs.id
-JOIN public.risk_level_catalog rl ON vr.risk_level_id = rl.id
-JOIN public.country_catalog c ON vr.country_id = c.id;
+   FROM verification_requests vr
+     JOIN document_type dt ON vr.document_type_id = dt.id
+     JOIN verification_status vs ON vr.status_id = vs.id
+     JOIN risk_level_catalog rl ON vr.risk_level_id = rl.id
+     JOIN country_catalog c ON vr.country_id = c.id;
 
 INSERT INTO public.verification_status (id, code, description)
 VALUES

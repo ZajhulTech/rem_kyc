@@ -13,9 +13,11 @@
               <BaseInput
                 label=""
                 placeholder="Busqueda por Nombre o Estatus"
-                v-model="name"
+                v-model="searchText"
               />
-              <BaseButton variant="secondary" @click="getVerificationfromServ">Actualizar</BaseButton>
+               <BaseButton variant="secondary" @click="handleSearch">
+                {{ loading ? 'Buscando...' : 'Buscar' }}
+              </BaseButton>
             </nav>
 
           </div>
@@ -30,7 +32,7 @@
               :totalPages="totalPages"
               @update:page="loadDataTable"
               @row:view="(row) => router.push(`/verification/${row.id}`)"
-              @row:edit="(row) => console.log('Editar fila de:', row)"
+              @row:edit="(row) => $router.push(`/verification/${row.id}/status`)"
             />
           </div>
         </div>
@@ -69,6 +71,9 @@
     "createdAt"
   ];
 
+  const loading = ref(false);
+  const searchText = ref('');
+
   const items = ref([]);
   const totalPages = ref(0);
   const page = ref(1);
@@ -76,7 +81,8 @@
 
   async function loadDataTable(p: number = 1) {
     try {
-      const response = await getVerifications(p, pageSize.value);
+      loading.value = true;
+      const response = await getVerifications(p, pageSize.value, searchText.value);
       items.value = response.items.map(item => ({
         id: item.id,
         name: item.full_name,
@@ -84,20 +90,31 @@
         country: item.country,
         status: item.status === "approved" ? "✅ Aprobado"
               : item.status === "pending" ? "⚠️ Pendiente"
+              : item.status === "requires_information" ? "ℹ️ Requiere Información"
               : "❌ Rechazado",
         createdAt: formatDate(item.created_at)
       }));
       totalPages.value = response.total_pages;
       page.value = response.page;
 
-      console.log("Pagina:",page.value);
-      console.log("Totales:",totalPages.value);
-      console.log("Data Item:", items.value);
-
     } catch (error) {
       console.error("Error al cargar verificaciones:", error);
     }
+    finally {
+      loading.value = false;
+    }
   }  
+
+  const handleSearch = () => {
+    page.value = 1; 
+    loadDataTable();
+  };
+
+  const clearSearch = () => {
+    searchText.value = '';
+    page.value = 1;
+    loadDataTable();
+  } ;
 
   onMounted(() => loadDataTable(page.value));
 

@@ -2,11 +2,30 @@
 # FastAPI Clean Architecture Project
 ![Python](https://img.shields.io/badge/Python-3.10-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-%20green)
-Este proyecto implementa una arquitectura limpia utilizando **FastAPI** y **MongoDB** como base de datos, facilitando el mantenimiento, escalabilidad y separación de responsabilidades.
+Este proyecto implementa una arquitectura limpia utilizando **FastAPI**, **Postgresql** y **MongoDB** como base de datos, facilitando el mantenimiento, escalabilidad y separación de responsabilidades.
+
+
+Por qué se selecciono PostgreSQL para este challenge?
+
+En un scenario real una base de datos relacional es mejor opcion por las siguientes criterios: 
+    * Estructura fija de datos: Las solicitudes de verificación tienen campos bien definidos y consistentes
+    * Consultas complejas: Necesitas filtros, búsquedas y joins potenciales
+    * Transacciones ACID: Importante para datos de verificación KYC
+    * Validaciones a nivel BD: Constraints, tipos de datos, relaciones
+    * Escalabilidad: PostgreSQL maneja bien el crecimiento de datos estructurados
+
+Ahora bien Una base de Datos NoSQL **MongoDB** puede tambien ser usado en esta demo o un tema productivo de forma paralela, o como complemento a una base relacional 
+bien como registro de ejecuciones y su detalle de procesos en segundo plano,
+
+Para temas de logs hoy n dia es mejor usar herramientas de observabilidad cuyas caracteristicas estan hechas para el manejo de volumenes de registros enfocados auditorias, operacion
+, pero este tema esta fura del alcance de este challengue
 
 ---
 
-## 🧠 Arquitectura
+
+
+
+## 🧠 Arquitectura General
 
 El proyecto sigue los principios de **Clean Architecture**, dividiendo la lógica en capas bien definidas:
 
@@ -17,12 +36,28 @@ core/
 ├── models/                 # Modelos de datos (AtlasDB, request, response)
 ├── userstorys/             # Casos de uso / lógica de negocio
 test/
-webapi/                 # API Interface (Fast API)
-worker/                 # motor de validador de reglas basicas 
+frontend/                   # Interfaz Web (vue.js)
+webapi/                     # API Interface (Fast API)
+worker/                     # motor de validador de reglas basicas 
+sql/                        # scripts de sql con tablas y datos de prueba inicial en postgresql
+```
+
+---
+# VARIABLES DE AMBIENTE
+
+se deben de generar los respectivos .env en los respectivos proyectos (webapi, frontend y worker) para el levantamiento de los mismos
+Para Python
+```bash
+MONGODB_URI=mongodb+srv://user:yourpass@clusterlab.woigz.mongodb.net/
+MONGODB_DB=verification_logs
+
+POSTGRES_URI=postgresql+asyncpg://user:yourpass@host:port/onboarding
+
 ```
 
 ---
 
+# BACKEND API
 ## ✅ PASO 1: Instalar dependencias de Python
 
 Crea un entorno virtual e instala las dependencias necesarias:
@@ -34,9 +69,7 @@ venv\Scripts\activate       # en Windows
 
 pip install -r requirements.txt
 
-
 deactivate  # salir de venv
-
 
 ```
 
@@ -47,7 +80,7 @@ deactivate  # salir de venv
 Ubícate en la raíz del proyecto y ejecuta:
 
 ```bash
-uvicorn main:app --reload
+uvicorn webapi.main:app --reload
 ```
 
 Esto levanta la API y puedes acceder a la documentación interactiva en:
@@ -72,7 +105,7 @@ Ejemplo de .env:
 MONGO_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<basededatos>
 ```
 
-### 🚀 cONSTRUIR CONTENEDOR
+### 🚀 CONSTRUIR CONTENEDOR
 ```bash
 docker build -t saulduenas/fastapi-clean-api:master -f webapi/Dockerfile .
 ```
@@ -110,22 +143,6 @@ pytest
 
 ---
 
-
-## 📂 Protegiendo Rutas (detallada)
-```python
-from fastapi import APIRouter
-from infra.security.authorization import Authorize
-
-router = APIRouter()
-
-@router.get("/products")
-@Authorize("products:view")
-def list_products(user):
-    return {"user": user, "msg": "Lista de productos"}
-```
-
----
-
 ## 📌 Tecnologías utilizadas
 
 - Python 3.10+
@@ -136,6 +153,63 @@ def list_products(user):
 - Docker / Docker Compose
 
 ---
+
+# 💼 Aplicación Frontend – Vue.js
+
+Una aplicación desarrollada con **Vue 3** usando Vite, que consume una API REST. Este frontend es una demo de solicitudes de verificación de identidad.
+
+---
+
+## 📁 Estructura del Proyecto Front
+
+```
+/vue-code
+  └── src
+      ├── components          # Componentes reutilizables (Header, Footer, Sidebar, etc.)
+      ├── views               # Vistas principales (LoginView, SalesView)
+      ├── services            # Servicios de comunicación con API
+      ├── styles              # Variables y estilos globales
+```
+
+---
+## 🚀 Tecnologías utilizadas
+
+- **Vue 3 + Vite**
+- **Axios**
+- **JavaScript**
+- **LocalStorage para manejo de sesión**
+
+---
+
+## 🛠️ Requisitos Previos
+
+- [Node.js 18+](https://nodejs.org/)
+
+---
+
+## ▶️ Ejecución del Proyecto
+
+1. Navega a la carpeta `vue-code`.
+2. generar el archivo `.env`:
+
+```bash
+cp .env.example .env
+```
+
+3. Edita `.env` y asegúrate de configurar correctamente la URL base de tu API.
+```bash
+VITE_API_BASE_URL=http://192.168.0.17:8001/api/v1
+```
+4. Ejecuta en terminal:
+
+```bash
+npm install
+npm run dev
+```
+
+Esto iniciará la app en: [http://localhost:55508](http://localhost:55508)
+
+> ⚠️ Asegúrate de que la API esté disponible en la URL definida en `VITE_API_URL`.
 
 ## 🧑‍💻 Autor
 
