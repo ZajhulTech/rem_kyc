@@ -2,12 +2,21 @@ from webapi.dependencies.postgres_dependencies import log_connection_info
 from fastapi import FastAPI
 from core.infra.api.exception_handlers import add_exception_handlers
 from webapi.routers import verification_router, catalog_router
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(    
     title="My FastAPI App",
     version="1.0.0"
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # o ["http://localhost:5173"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event("startup")
 async def startup_event():

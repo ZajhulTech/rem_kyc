@@ -16,7 +16,7 @@ core/
 ├── interfaces/             # Contratos y puentes entre capas (repositories, unit of work, user stories)
 ├── models/                 # Modelos de datos (AtlasDB, request, response)
 ├── userstorys/             # Casos de uso / lógica de negocio
-
+test/
 webapi/                 # API Interface (Fast API)
 worker/                 # motor de validador de reglas basicas 
 ```
@@ -70,6 +70,11 @@ Un archivo .env con la variable MONGO_URI apuntando a tu instancia de MongoDB At
 Ejemplo de .env:
 ```
 MONGO_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<basededatos>
+```
+
+### 🚀 cONSTRUIR CONTENEDOR
+```bash
+docker build -t saulduenas/fastapi-clean-api:master -f webapi/Dockerfile .
 ```
 
 ### 🚀 Levantar la aplicación
