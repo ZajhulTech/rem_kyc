@@ -51,7 +51,6 @@ class VerificationLogModel(BaseModel):
     processing_time_ms: int
     created: datetime = Field(default_factory=datetime.now)
     
-
     class Settings:
         db_name = "kyc"
         collection_name = "verification_logs"
